@@ -10,12 +10,13 @@ enum Palette {
     // Inchiostro verde scurissimo sul bottone salvia: contrasto sopra 7:1
     static let ink = Color(red: 0.06, green: 0.12, blue: 0.07)
 
-    // Schermata di blocco: salvia profondo, quasi bosco
-    static let lockTop = Color(.displayP3, red: 0.19, green: 0.25, blue: 0.20)
-    static let lockBottom = Color(.displayP3, red: 0.08, green: 0.11, blue: 0.09)
+    // Schermata di blocco: quasi bianco con un velo salvia, testi in salvia scuro (contrasto sopra 4,5:1)
+    static let lockTop = Color(.displayP3, red: 0.99, green: 0.995, blue: 0.985)
+    static let lockBottom = Color(.displayP3, red: 0.93, green: 0.955, blue: 0.92)
     static let lockGlow = Color(.displayP3, red: 0.55, green: 0.68, blue: 0.52)
-    static let lockText = Color(red: 0.93, green: 0.96, blue: 0.92)
-    static let lockSecondary = Color(red: 0.93, green: 0.96, blue: 0.92).opacity(0.72)
+    static let lockText = sageShade
+    static let lockLabel = Color(.displayP3, red: 0.31, green: 0.43, blue: 0.30)
+    static let lockSecondary = ink.opacity(0.66)
 
     static func secondaryText(isDark: Bool, highContrast: Bool) -> Color {
         if highContrast { return .primary }

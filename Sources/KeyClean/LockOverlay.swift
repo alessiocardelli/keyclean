@@ -18,8 +18,7 @@ final class LockOverlayController {
             window.setFrame(screen.frame, display: false)
             window.level = .screenSaver
             window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-            window.isOpaque = false
-            window.backgroundColor = .clear
+            window.backgroundColor = .white
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: LockView(onUnlock: onUnlock))
             window.alphaValue = 0
@@ -50,20 +49,6 @@ private final class OverlayWindow: NSWindow {
     override var canBecomeKey: Bool { true }
 }
 
-/// Vetro scuro sopra la scrivania: si intravede quello che c'è sotto, tinto di salvia.
-private struct Backdrop: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .fullScreenUI
-        view.blendingMode = .behindWindow
-        view.state = .active
-        view.appearance = NSAppearance(named: .darkAqua)
-        return view
-    }
-
-    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
-}
-
 struct LockView: View {
     var onUnlock: () -> Void
 
@@ -72,29 +57,20 @@ struct LockView: View {
 
     var body: some View {
         ZStack {
-            Backdrop()
-            LinearGradient(colors: [Palette.lockTop.opacity(0.86), Palette.lockBottom.opacity(0.94)],
-                           startPoint: .top, endPoint: .bottom)
-            // Alone salvia dietro l'icona
-            RadialGradient(colors: [Palette.lockGlow.opacity(0.32), .clear], center: UnitPoint(x: 0.5, y: 0.4),
-                           startRadius: 0, endRadius: 460)
+            // Fondo chiaro e pieno: fa luce sulla tastiera e si vede lo sporco
+            LinearGradient(colors: [Palette.lockTop, Palette.lockBottom], startPoint: .top, endPoint: .bottom)
 
             VStack(spacing: 0) {
                 Spacer()
 
-                Image(nsImage: NSApp.applicationIconImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: 168, height: 168)
-                    .shadow(color: Palette.lockGlow.opacity(0.35), radius: 40, y: 12)
-                    .scaleEffect(appeared || reduceMotion ? 1 : 0.86)
-                    .accessibilityHidden(true)
+                KeyboardIllustration()
+                    .frame(width: 520, height: 330)
 
                 Text("KEYCLEAN")
                     .font(.system(size: 12, weight: .semibold))
                     .tracking(2.4)
-                    .foregroundStyle(Palette.sageTop)
-                    .padding(.top, 28)
+                    .foregroundStyle(Palette.lockLabel)
+                    .padding(.top, 20)
 
                 Text("Tastiera bloccata")
                     .font(.system(size: 44, weight: .semibold))
@@ -114,11 +90,11 @@ struct LockView: View {
 
                 Label("Il tasto Touch ID resta attivo: lì passa il panno con delicatezza.", systemImage: "touchid")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Palette.lockSecondary.opacity(0.85))
+                    .foregroundStyle(Palette.lockSecondary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(Capsule().fill(Color.white.opacity(0.06)))
-                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5))
+                    .background(Capsule().fill(Palette.sageMid.opacity(0.14)))
+                    .overlay(Capsule().strokeBorder(Palette.sageShade.opacity(0.16), lineWidth: 0.5))
                     .padding(.bottom, 48)
             }
             .multilineTextAlignment(.center)
@@ -128,7 +104,7 @@ struct LockView: View {
         }
         .ignoresSafeArea()
         .onAppear {
-            // Ingresso una volta sola, niente movimento continuo
+            // Ingresso una volta sola
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) { appeared = true }
         }
     }

@@ -73,8 +73,11 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         let screen = itemFrame.flatMap { item in
             NSScreen.screens.first { $0.frame.minX <= item.midX && item.midX < $0.frame.maxX && abs($0.frame.maxY - item.minY) < 60 }
         } ?? NSScreen.main ?? NSScreen.screens[0]
-        // Sempre sotto la barra dei menu, anche se il frame dell'icona sconfina in alto
-        let top = min(itemFrame?.minY ?? .greatestFiniteMagnitude, screen.visibleFrame.maxY)
+        // Sempre sotto la barra dei menu. Sul monitor esterno l'area utile può coincidere con lo schermo intero
+        // e il frame dell'icona stare sopra lo schermo: l'altezza della barra si prende dal valore più alto disponibile
+        let barHeight = max(screen.frame.maxY - screen.visibleFrame.maxY, screen.safeAreaInsets.top,
+                            itemFrame?.height ?? 0, NSApp.mainMenu?.menuBarHeight ?? 0, 24)
+        let top = screen.frame.maxY - barHeight
         let preferredX = itemFrame?.minX ?? screen.frame.midX - size.width / 2
         let x = min(max(preferredX, screen.visibleFrame.minX + 8), screen.visibleFrame.maxX - size.width - 8)
         panel.setFrame(NSRect(x: x, y: top - Self.panelGap - size.height, width: size.width, height: size.height), display: true)
