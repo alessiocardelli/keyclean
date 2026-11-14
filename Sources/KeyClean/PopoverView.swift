@@ -18,7 +18,7 @@ struct PopoverView: View {
 
             if model.isTrusted {
                 Button(action: onLock) {
-                    Label("Blocca tastiera", systemImage: "lock.fill")
+                    Label("Blocca tastiera", systemImage: "keyboard.badge.ellipsis")
                 }
                 .buttonStyle(SageButtonStyle())
                 .padding(.top, 20)
@@ -68,20 +68,27 @@ struct PopoverView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "keyboard")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Palette.ink)
-                .frame(width: 30, height: 30)
-                .background(SageFill(shape: RoundedRectangle(cornerRadius: 8, style: .continuous)))
+        HStack(spacing: 12) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 48, height: 48)
+                .padding(-4)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("KeyClean")
-                    .font(.system(size: 13, weight: .semibold))
-                Text("Blocca la tastiera e puliscila.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(secondaryText)
+                    .font(.system(size: 15, weight: .semibold))
+                    .tracking(-0.2)
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(model.isTrusted ? Palette.sageMid : Color.orange)
+                        .frame(width: 6, height: 6)
+                    Text(model.isTrusted ? "Pronta" : "Manca un permesso")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(secondaryText)
+                }
             }
+            Spacer()
         }
     }
 }

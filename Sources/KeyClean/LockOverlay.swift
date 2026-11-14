@@ -50,45 +50,87 @@ private final class OverlayWindow: NSWindow {
     override var canBecomeKey: Bool { true }
 }
 
+/// Vetro scuro sopra la scrivania: si intravede quello che c'è sotto, tinto di salvia.
+private struct Backdrop: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .fullScreenUI
+        view.blendingMode = .behindWindow
+        view.state = .active
+        view.appearance = NSAppearance(named: .darkAqua)
+        return view
+    }
+
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
+
 struct LockView: View {
     var onUnlock: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Palette.lockTop, Palette.lockBottom], startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [Palette.lockGlow.opacity(0.22), .clear], center: .center, startRadius: 0, endRadius: 520)
+            Backdrop()
+            LinearGradient(colors: [Palette.lockTop.opacity(0.86), Palette.lockBottom.opacity(0.94)],
+                           startPoint: .top, endPoint: .bottom)
+            // Alone salvia dietro l'icona
+            RadialGradient(colors: [Palette.lockGlow.opacity(0.32), .clear], center: UnitPoint(x: 0.5, y: 0.4),
+                           startRadius: 0, endRadius: 460)
 
             VStack(spacing: 0) {
-                Image(systemName: "keyboard")
-                    .font(.system(size: 34, weight: .medium))
-                    .foregroundStyle(Palette.ink)
-                    .frame(width: 84, height: 84)
-                    .background(SageFill(shape: RoundedRectangle(cornerRadius: 22, style: .continuous)))
-                    .shadow(color: Palette.lockGlow.opacity(0.45), radius: 24, y: 6)
+                Spacer()
+
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 168, height: 168)
+                    .shadow(color: Palette.lockGlow.opacity(0.35), radius: 40, y: 12)
+                    .scaleEffect(appeared || reduceMotion ? 1 : 0.86)
                     .accessibilityHidden(true)
 
-                Text("Tastiera bloccata")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(Palette.lockText)
+                Text("KEYCLEAN")
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(2.4)
+                    .foregroundStyle(Palette.sageTop)
                     .padding(.top, 28)
 
+                Text("Tastiera bloccata")
+                    .font(.system(size: 44, weight: .semibold))
+                    .tracking(-0.8)
+                    .foregroundStyle(Palette.lockText)
+                    .padding(.top, 10)
+
                 Text("Pulisci pure: i tasti non fanno niente.")
-                    .font(.system(size: 15))
+                    .font(.system(size: 17))
                     .foregroundStyle(Palette.lockSecondary)
-                    .padding(.top, 8)
+                    .padding(.top, 10)
 
                 HoldToUnlockButton(onUnlock: onUnlock)
-                    .padding(.top, 40)
+                    .padding(.top, 44)
 
-                Text("Il tasto Touch ID resta attivo: lì passa il panno con delicatezza.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Palette.lockSecondary.opacity(0.8))
-                    .padding(.top, 20)
+                Spacer()
+
+                Label("Il tasto Touch ID resta attivo: lì passa il panno con delicatezza.", systemImage: "touchid")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Palette.lockSecondary.opacity(0.85))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5))
+                    .padding(.bottom, 48)
             }
             .multilineTextAlignment(.center)
-            .padding(32)
+            .padding(.horizontal, 32)
+            .opacity(appeared || reduceMotion ? 1 : 0)
+            .offset(y: appeared || reduceMotion ? 0 : 12)
         }
         .ignoresSafeArea()
+        .onAppear {
+            // Ingresso una volta sola, niente movimento continuo
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) { appeared = true }
+        }
     }
 }
 
@@ -102,23 +144,27 @@ struct HoldToUnlockButton: View {
 
     var body: some View {
         let shape = Capsule(style: .continuous)
-        ZStack(alignment: .leading) {
+        ZStack {
             SageFill(shape: shape, pressed: isPressing)
-            GeometryReader { proxy in
-                shape
-                    .fill(Palette.sageShade.opacity(0.35))
-                    .frame(width: proxy.size.width * progress)
+            // Riempimento di avanzamento: scala in orizzontale, non cambia la larghezza
+            shape
+                .fill(Palette.sageShade.opacity(0.32))
+                .scaleEffect(x: progress, y: 1, anchor: .leading)
+            HStack(spacing: 10) {
+                Image(systemName: isPressing ? "lock.open.fill" : "hand.tap.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 18)
+                Text(isPressing ? "Continua a tenere premuto" : "Tieni premuto per sbloccare")
+                    .font(.system(size: 16, weight: .semibold))
             }
-            Label(isPressing ? "Continua a tenere premuto" : "Tieni premuto per sbloccare", systemImage: "lock.open.fill")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Palette.ink)
-                .frame(maxWidth: .infinity)
+            .foregroundStyle(Palette.ink)
         }
-        .frame(width: 300, height: 54)
+        .frame(width: 320, height: 58)
         .clipShape(shape)
-        .overlay(shape.strokeBorder(Palette.sageShade.opacity(0.6), lineWidth: 0.5))
-        .shadow(color: Palette.lockGlow.opacity(isPressing ? 0.2 : 0.4), radius: isPressing ? 6 : 16, y: 4)
-        .scaleEffect(isPressing ? 0.98 : 1)
+        .overlay(shape.strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5).blendMode(.overlay))
+        .overlay(shape.strokeBorder(Palette.sageShade.opacity(0.5), lineWidth: 0.5))
+        .shadow(color: Palette.lockGlow.opacity(isPressing ? 0.2 : 0.45), radius: isPressing ? 8 : 22, y: isPressing ? 2 : 8)
+        .scaleEffect(isPressing ? 0.97 : 1)
         .contentShape(shape)
         .onLongPressGesture(minimumDuration: Self.holdDuration, maximumDistance: 60, perform: {
             onUnlock()
@@ -130,7 +176,7 @@ struct HoldToUnlockButton: View {
                 withAnimation(.easeOut(duration: 0.25)) { progress = 0 }
             }
         })
-        .animation(.easeOut(duration: 0.15), value: isPressing)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressing)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Sblocca tastiera")
         .accessibilityAddTraits(.isButton)

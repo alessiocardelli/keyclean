@@ -68,9 +68,13 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         let size = measuredSize()
 
         let itemFrame = statusItem.button?.window?.frame
-        let screen = NSScreen.screens.first(where: { itemFrame.map($0.frame.intersects) ?? false })
-            ?? NSScreen.main ?? NSScreen.screens[0]
-        let top = itemFrame?.minY ?? (screen.frame.maxY - NSStatusBar.system.thickness)
+        // Schermo dell'icona: quello che la contiene in orizzontale con la cima vicina all'icona.
+        // Con due monitor il frame dell'icona può stare appena sopra lo schermo, quindi niente intersects
+        let screen = itemFrame.flatMap { item in
+            NSScreen.screens.first { $0.frame.minX <= item.midX && item.midX < $0.frame.maxX && abs($0.frame.maxY - item.minY) < 60 }
+        } ?? NSScreen.main ?? NSScreen.screens[0]
+        // Sempre sotto la barra dei menu, anche se il frame dell'icona sconfina in alto
+        let top = min(itemFrame?.minY ?? .greatestFiniteMagnitude, screen.visibleFrame.maxY)
         let preferredX = itemFrame?.minX ?? screen.frame.midX - size.width / 2
         let x = min(max(preferredX, screen.visibleFrame.minX + 8), screen.visibleFrame.maxX - size.width - 8)
         panel.setFrame(NSRect(x: x, y: top - Self.panelGap - size.height, width: size.width, height: size.height), display: true)
