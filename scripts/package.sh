@@ -1,5 +1,6 @@
 #!/bin/sh
-# Impacchetta dist/KeyClean.app (prodotta da build.sh) in un dmg versionato con SHA256SUMS, in dist/release.
+# Impacchetta dist/KeyClean.app (prodotta da build.sh) in dmg e zip versionati, con SHA256SUMS e install.sh, in dist/release.
+# Lo zip serve a install.sh (installazione da Terminale).
 # Non ricompila e non tocca la copia in /Applications.
 set -eu
 
@@ -17,7 +18,9 @@ ln -s /Applications "$STAGE/Applications"
 
 hdiutil create -volname "KeyClean" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >/dev/null
 codesign --force --sign - "$DMG"
-(cd "$RELEASE" && shasum -a 256 "KeyClean-$VERSION.dmg" > SHA256SUMS)
+ditto -c -k --keepParent "$APP" "$RELEASE/KeyClean-$VERSION.zip"
+cp "$ROOT/scripts/install.sh" "$RELEASE/install.sh"
+(cd "$RELEASE" && shasum -a 256 "KeyClean-$VERSION.dmg" "KeyClean-$VERSION.zip" > SHA256SUMS)
 
 echo "dmg: $DMG"
 cat "$RELEASE/SHA256SUMS"

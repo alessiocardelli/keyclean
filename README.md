@@ -19,6 +19,12 @@ macOS 26 on Apple Silicon. Tested on macOS 26.5.1. The interface is in Italian.
 2. The app is not signed with an Apple Developer account. On first launch macOS blocks it: open System Settings, Privacy & Security, and click "Open Anyway".
 3. Turn on KeyClean in System Settings, Privacy & Security, Accessibility. This permission is what lets the app discard key presses.
 
+Or from Terminal. The script checks the SHA256, copies the app to Applications and opens it. Step 3 is still up to you:
+
+```sh
+curl -fsSL https://github.com/alessiocardelli/keyclean/releases/latest/download/install.sh | bash
+```
+
 ## Privacy
 
 KeyClean discards keyboard events while the lock is on. It does not read, store or send what you type, and it never connects to the internet.
